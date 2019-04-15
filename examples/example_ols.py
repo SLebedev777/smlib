@@ -11,6 +11,7 @@ from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 
 from smlib.linear.ols import LinearRegression, bias_variance
+from smlib.linear.ridge import Ridge
 
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
@@ -28,8 +29,8 @@ diabetes_y_train = diabetes.target[:-20]
 diabetes_y_test = diabetes.target[-20:]
 
 # Create linear regression object
-#regr = linear_model.LinearRegression()
-regr = LinearRegression(intercept=True)
+#regr = LinearRegression(intercept=True)
+regr = Ridge()
 
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
@@ -54,6 +55,6 @@ plt.plot(diabetes_X_test, diabetes_y_pred, color='blue', linewidth=3)
 
 plt.show()
 
-bias_variance(LinearRegression(), diabetes_X_train, diabetes_y_train,
+bias_variance(regr, diabetes_X_train, diabetes_y_train,
               diabetes_X_test, diabetes_y_test, n_subsamples=30,
                   subsample_frac=.8)

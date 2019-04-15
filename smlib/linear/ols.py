@@ -7,6 +7,7 @@ Created on Sun Mar 10 18:38:40 2019
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
 
 class LinearRegression:
@@ -16,22 +17,24 @@ class LinearRegression:
     def __init__(self, intercept=True):
         self.intercept = intercept
         self.fitted = False
+        self.scaler = StandardScaler()
         
     def fit(self, X, y):
+        X = self.scaler.fit_transform(X)
         if self.intercept:
             X = self.add_intercept(X)
         X_t = X.transpose()
         cov = np.matmul(X_t, X)
-        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y)
-        #self.coef_ = self.pinv(X).dot(y)
-        self.rss_ = y - np.dot(X, self.coef_.transpose())
+        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y).transpose()
+        self.rss_ = y - np.dot(X, self.coef_)
         self.fitted = True
         return self.coef_
     
     def predict(self, X_pred):
+        X_pred = self.scaler.transform(X_pred)
         if self.intercept:
             X_pred = self.add_intercept(X_pred)
-        return np.dot(X_pred, self.coef_.transpose())
+        return np.dot(X_pred, self.coef_)
 
     def regr_analysis(self):
         if not self.fitted:
