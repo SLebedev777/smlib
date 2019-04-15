@@ -5,12 +5,14 @@ Created on Wed Feb 27 00:10:53 2019
 @author: LebedevSM
 """
 
+import logging
 from scipy.stats import entropy
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+logger = logging.getLogger(__name__)
+#logger.setLevel(logging.DEBUG)
 
 class TreeNode:
     def __init__(self, key, depth, val=None, left=None, right=None, parent=None):
@@ -21,14 +23,14 @@ class TreeNode:
         self.right = right
         self.parent = parent
         self.id = str(np.random.randint(65535))
-
+    
     def __str__(self):
         str_left   = 'None' if self.left is None else self.left.id
         str_right  = 'None' if self.right is None else self.right.id
         str_parent = 'None' if self.parent is None else self.parent.id
         return 'node id=%s  key=%s  depth=%d  val=%s  left.id=%s  right.id=%s  parent.id=%s' % \
                 (self.id, self.key, self.depth, self.val, str_left, str_right, str_parent)
-
+    
    
 def categorical_entropy(y):
     # y is series
@@ -122,17 +124,8 @@ class DecisionTree:
                 left_metric = self.metric_func(left_y)
                 right_metric = self.metric_func(right_y)
                 ig = y_metric - (len(left_y)*left_metric + len(right_y)*right_metric) / N
-                if self.verbose:
-                    print('feature: ', feature)
-                    print('threshold: ', threshold)
-                    print('mask:\n', mask)
-                    print('left_y:\n', left_y)
-                    print('right_y:\n', right_y)
-                    print('y metric = %.3f' % y_metric)
-                    print('left_y metric = %.3f ' % left_metric)
-                    print('right_y metric = %.3f' % right_metric)
-                    print('ig = %.3f ' % ig)
-                    print('-'*30)
+                logger.debug('feature: %s  threshold: %.2f  y_metric = %.3f  left_y_metric = %.3f  right_y_metric = %.3f  ig = %.3f' %
+                              (feature, threshold, y_metric, left_metric, right_metric, ig))
                 calcs.append([feature, threshold, ig])
         key = sorted(calcs, key=lambda x: x[2], reverse=True)[0]
         best_feature = key[0]
@@ -143,10 +136,9 @@ class DecisionTree:
         mask = x[best_feature] <= best_threshold
         left_x, left_y = x[mask], y[mask]
         right_x, right_y = x[~mask], y[~mask]
-        if self.verbose:
-            print('best split = ', key)
-            print('left_y.value_counts():\n', left_y.value_counts())
-            print('right_y.value_counts():\n', right_y.value_counts())
+        logger.debug('best split = %s' % key)
+        logger.debug('%s' % left_y.value_counts())
+        logger.debug('%s' % right_y.value_counts())
         return key, left_x, left_y, right_x, right_y
     
     def create_node(self, key, val, current_node):
@@ -169,33 +161,21 @@ class DecisionTree:
 
     def _build(self, x, y, current_node):
         # x is dataframe, y is series
-        if self.verbose:
-            print('*'*70)
-            print('current_node: ', current_node)
+        logger.debug('current_node: %s' % current_node)
         y_metric = self.metric_func(y)
         curr_depth = current_node.depth if current_node is not None else 0
         if curr_depth >= self.max_depth or len(y) <= max(1, self.min_samples_leaf) or y_metric < 0.001:
             # make leaf with class label
             label = y.value_counts().index[0]
             node = self.create_node('leaf', label, current_node)
-            if self.verbose:
-                print('creating leaf!')
-                print('current depth = %d  max_depth = %d' % (curr_depth, self.max_depth))
-                print('len_y=%d  min_samples_leaf = %d' % (len(y), self.min_samples_leaf))
-                print('y metric = %.3f' % y_metric)
-                print('class label: ', label)
+            logger.debug('creating leaf!')
+            logger.debug('current depth = %d  max_depth = %d' % (curr_depth, self.max_depth))
+            logger.debug('len_y = %d  y metric = %.3f class label = %s' % (len(y), y_metric, label))
         else:
-            if self.verbose:
-                print('finding split for current node:  ')
-                print(current_node)
+            logger.debug('finding split for current node:  %s' % str(current_node))
             features = x.columns
             key, left_x, left_y, right_x, right_y = self.find_best_current_split(x, y, features)
             node = self.create_node(key, None, current_node)
             self._build(left_x, left_y, node)
             self._build(right_x, right_y, node)
         return node
-    
-    def print_tree(self):
-        for n in self.nodes:
-            print(n)
-
