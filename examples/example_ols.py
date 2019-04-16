@@ -30,7 +30,7 @@ diabetes_y_test = diabetes.target[-20:]
 
 # Create linear regression object
 #regr = LinearRegression(intercept=True)
-regr = Ridge()
+regr = Ridge(1.)
 
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)

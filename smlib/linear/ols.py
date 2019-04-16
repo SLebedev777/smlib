@@ -23,10 +23,11 @@ class LinearRegression:
         X = self.scaler.fit_transform(X)
         if self.intercept:
             X = self.add_intercept(X)
-        X_t = X.transpose()
+        X_t = X.T
         cov = np.matmul(X_t, X)
-        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y).transpose()
-        self.rss_ = y - np.dot(X, self.coef_)
+        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y).T
+        self.residuals_ = y - np.dot(X, self.coef_)
+        self.rss_ = np.dot(self.residuals_.T, self.residuals_)
         self.fitted = True
         return self.coef_
     
@@ -39,10 +40,11 @@ class LinearRegression:
     def regr_analysis(self):
         if not self.fitted:
             return
-        print('Mean(RSS)=%.7f' % np.mean(self.rss_))
-        s, pvalue = stats.normaltest(self.rss_)
-        print('testing if RSS are normally distributed: p-value is %.5f' % pvalue)
-        plt.scatter(range(len(self.rss_)), self.rss_)
+        print('RSS = %.7f' % self.rss_)
+        print('mean(residuals) = %.7f' % np.mean(self.residuals_))
+        s, pvalue = stats.normaltest(self.residuals_)
+        print('testing if residuals are normally distributed: p-value is %.5f' % pvalue)
+        plt.scatter(range(len(self.residuals_)), self.residuals_)
 
     @staticmethod
     def add_intercept(X):
