@@ -6,6 +6,7 @@ Created on Sun Mar 10 18:38:40 2019
 """
 import numpy as np
 from scipy import stats
+from statsmodels.stats.stattools import durbin_watson
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
@@ -41,10 +42,23 @@ class LinearRegression:
         if not self.fitted:
             return
         print('RSS = %.7f' % self.rss_)
+        print('Basic regression analysis')
+        print('1. Test if mean(residuals) = 0')
         print('mean(residuals) = %.7f' % np.mean(self.residuals_))
+        print('2. Test if residuals are normally distributed')
         s, pvalue = stats.normaltest(self.residuals_)
-        print('testing if residuals are normally distributed: p-value is %.5f' % pvalue)
+        print('p-value is %.5f (comparing to 0.001)' % pvalue)
+        if pvalue < 0.001:
+            print("The null hypothesis of normality can be rejected")
+        else:
+            print("The null hypothesis of normality cannot be rejected")
+        print('3. Test if residuals are independent (Durbin-Watson test)')
+        print('Durbin-Watson statistic is %.5f, comparing to ' % durbin_watson(self.residuals_))
+        print('0 (highly correlated) --> 2 (independent) <-- 4 (highly correlated)')
+        print('4. Test if var(residuals) = const (homoscedacity check)')
         plt.scatter(range(len(self.residuals_)), self.residuals_)
+        plt.title('homoscedacity check')
+
 
     @staticmethod
     def add_intercept(X):

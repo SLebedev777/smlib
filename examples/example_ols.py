@@ -30,7 +30,7 @@ diabetes_y_test = diabetes.target[-20:]
 
 # Create linear regression object
 #regr = LinearRegression(intercept=True)
-regr = Ridge(1.)
+regr = Ridge(0.1)
 
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)
@@ -58,3 +58,5 @@ plt.show()
 bias_variance(regr, diabetes_X_train, diabetes_y_train,
               diabetes_X_test, diabetes_y_test, n_subsamples=30,
                   subsample_frac=.8)
+
+regr.regr_analysis()
