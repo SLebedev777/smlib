@@ -6,7 +6,7 @@ Created on Thu Mar 28 00:12:26 2019
 """
 
 import numpy as np
-from ols import LinearRegression, bias_variance
+from .ols import LinearRegression, bias_variance
 
 class Ridge(LinearRegression):
     def __init__(self, C=1.):
