@@ -61,9 +61,11 @@ class DecisionTree:
                 self.metric_func = gini
             else:
                 raise ValueError ('wrong criterion %s for task %s' % (criterion, task))
+            self.label_func = lambda y: y.value_counts().index[0]
         elif self.task == 'regression':
             if self.criterion == 'mse':
                 self.metric_func = mse
+                self.label_func = lambda y: np.mean(y)
             else:
                 raise ValueError ('wrong criterion %s for task %s' % (criterion, task))
         else:
@@ -166,7 +168,7 @@ class DecisionTree:
         curr_depth = current_node.depth if current_node is not None else 0
         if curr_depth >= self.max_depth or len(y) <= max(1, self.min_samples_leaf) or y_metric < 0.001:
             # make leaf with class label
-            label = y.value_counts().index[0]
+            label = self.label_func(y)
             node = self.create_node('leaf', label, current_node)
             logger.debug('creating leaf!')
             logger.debug('current depth = %d  max_depth = %d' % (curr_depth, self.max_depth))
