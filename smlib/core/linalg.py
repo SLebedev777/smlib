@@ -7,6 +7,7 @@ Created on Sun Apr 21 16:06:07 2019
 
 import numpy as np
 import logging
+from numpy.linalg import norm
 
 def svd(X):
     return np.linalg.svd(X, full_matrices=False)
@@ -45,7 +46,7 @@ def my_svd(X):
     U  = np.matrix(b_vectors[::-1]).T
     S  = np.array(singulars[::-1])
     return U, S, VT
-
+'''
 X = np.random.rand(400, 200)
 X -= X.mean()
 
@@ -56,3 +57,30 @@ print(np.allclose(X, X_reconstruct))
 U1, S1, VT1 = svd(X)
 X_reconstruct1 = np.outer(U1[:, 0] * S1[0], VT1[0, :])
 print(np.allclose(X, X_reconstruct1))
+'''
+
+def eigen(X, max_iters=10, eps=1e-07):
+    # rayleigh iterative algorithm
+    assert len(X.shape) == 2
+    m, n = X.shape
+    assert m == n
+    assert np.allclose(X, X.T)  # check symmetric, to have real eigenvalues
+    eigenpairs = []
+    for j in range(n):
+        u = np.random.rand(n)
+        u[j] = 1  # ensure to have non-zero start for j-th eigen direction
+        for i in range(max_iters):
+            u1 = X @ u
+            mu = norm(u1) / norm(u)
+            r = u1.T @ (X @ u1) / (u1.T @ u1)
+            u = u1
+        u /= norm(u)
+        eigenpairs.append([r, u])
+        p = np.nonzero(u)[0]
+        defl = (u @ X[p]) / norm(u)
+        X = X - defl
+        #x*transpose(x)*A*x*transpose(x)
+    return eigenpairs
+
+X = np.diag([30, 50, 200, 1])
+print(eigen(X))
