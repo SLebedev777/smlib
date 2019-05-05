@@ -6,6 +6,7 @@ from . import decision_trees
 from . import knn
 from . import linear
 from . import model_evaluation
+from . import dim_reduction
 
 __version__ = '0.0.1' 
 

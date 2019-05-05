@@ -18,6 +18,7 @@ v = np.array([[1, 0], [0, 1], [1, 1]])
 v1 = np.matmul(X, v.T)
 
 u, s, vt = svd(X)
+#u, s, vt = np.linalg.svd(X)
 vtv = np.matmul(vt, v.T)
 svtv = np.matmul(np.diag(s), vtv)
 usvtv = np.matmul(u, svtv)

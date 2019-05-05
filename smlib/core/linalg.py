@@ -10,12 +10,12 @@ import logging
 from numpy.linalg import norm
 
 
-def eigen(X, max_iters=50):
+def eigen(X, max_iters=70):
     # rayleigh iterative algorithm with simple deflation
     assert len(X.shape) == 2
     m, n = X.shape
     assert m == n
-    assert np.allclose(X, X.T)  # check symmetric, to have real eigenvalues
+    assert np.allclose(X, X.T)  # check symmetric, to have real positive eigenvalues
     eigenvalues  = []
     eigenvectors = []
     for j in range(n):
@@ -35,7 +35,6 @@ def eigen(X, max_iters=50):
 def svd(X):
     # naive and inefficient SVD algorithm. Use for study purpose only.
     assert len(X.shape)==2
-    m, n = X.shape
     cov = X.T @ X
     eigenvalues, eigenvectors = eigen(cov / norm(cov))
     eigenvalues *= norm(cov)
@@ -45,24 +44,25 @@ def svd(X):
     return U, S, VT
 
 
-print('compare Numpy and Smlib eigen calculations')
-X = np.random.rand(1000, 100)
-cov = (X.T @ X) / len(X)
-eigenvalues, eigenvectors = eigen(cov)
-np_evals, np_evects = np.linalg.eig(cov)
-print(norm(np.sort(np_evals) - np.sort(eigenvalues)))
-
-print('check eigen decomposition')
-X = np.diag([200, 50, 30, 29])
-eigenvalues, eigenvectors = eigen(X)
-print(eigenvectors)
-V = eigenvectors.T
-X_hat = V @ (np.diag(eigenvalues) @ V.T)  # reconstruct X
-print(X_hat.round(3))
-
-print('check SVD')
-X = np.random.rand(10000, 50)
-U, S, VT = svd(X)
-X_hat = U @ (np.diag(S) @ VT)
-print(np.allclose(X, X_hat))
-print(norm(X - X_hat))
+if  __name__ == '__main__':    
+    print('compare Numpy and Smlib eigen calculations')
+    X = np.random.rand(1000, 100)
+    cov = (X.T @ X) / len(X)
+    eigenvalues, eigenvectors = eigen(cov)
+    np_evals, np_evects = np.linalg.eig(cov)
+    print(norm(np.sort(np_evals) - np.sort(eigenvalues)))
+    
+    print('check eigen decomposition')
+    X = np.diag([200, 50, 30, 29])
+    eigenvalues, eigenvectors = eigen(X)
+    print(eigenvectors)
+    V = eigenvectors.T
+    X_hat = V @ (np.diag(eigenvalues) @ V.T)  # reconstruct X
+    print(X_hat.round(3))
+    
+    print('check SVD')
+    X = np.random.rand(10000, 50)
+    U, S, VT = svd(X)
+    X_hat = U @ (np.diag(S) @ VT)
+    print(np.allclose(X, X_hat))
+    print(norm(X - X_hat))
