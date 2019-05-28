@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn import neighbors
 from sklearn.model_selection import train_test_split
 from smlib.knn import kNN
-from smlib.decision_trees import DecisionTree
+from smlib.decision_trees.dt import DecisionTree
 from smlib.model_evaluation.bias_variance import bias_variance_regression
 from smlib.model_evaluation.metrics import mse
 
@@ -50,51 +50,32 @@ plt.show()
 
 
 # bias-variance analysis w.r.t. changing model complexity (number of neighbors)
-train_errors = []
-test_errors = []
-model_complexity_parameters = range(50)  # list of parameter values, that change complexity
-biases_conf_intervals = {'means': [], 'intervals': []}
-variances_conf_intervals = {'means': [], 'intervals': []}
-for k in model_complexity_parameters:
-    model = kNN(task='regression', k=k, metric='l2')
-    model.fit(X, y)
-    y_ = model.predict(T)
-    train_error = mse(y, model.predict(X))
-    test_error = mse(yT, y_)
-    train_errors.append(train_error)
-    test_errors.append(test_error)
-    bk, vk = bias_variance_regression(model, X_train=X, y_train=y, 
-                                                 X_test=T, y_test=yT, 
-                                                 n_subsamples=10, 
-                                                 subsample_frac=.95)
-    biases_conf_intervals['means'].append(bk.mean())
-    biases_conf_intervals['intervals'].append(2*bk.std())
-    variances_conf_intervals['means'].append(vk.mean())
-    variances_conf_intervals['intervals'].append(2*vk.std())
+complexity_param = range(1, 10)
+models = [kNN(task='regression', k=k, metric='l2') for k in complexity_param]
+   
+EPE, B, V = bias_variance_regression(models, X, y, T, yT, n_subsamples=30)
     
-plt.figure(figsize=(10, 7))
-plt.plot(model_complexity_parameters, train_errors, c='g', label='train_errors')
-plt.plot(model_complexity_parameters, test_errors, c='r', label='test_errors')
-plt.legend()
-plt.title('Train and test errors depending on model complexity')
+plt.figure(figsize=(10, 5))
+plt.plot(complexity_param, EPE, c='r', label='avg(EPE)')
+plt.plot(complexity_param, B,   c='b', label='avg(B**2)')
+plt.plot(complexity_param, V,   c='g', label='avg(V)')
 
+plt.legend()
 plt.show()
 
+###################################################
+#comparison with decision trees
+complexity_param = range(1, 10)
+models = [DecisionTree(task='regression',
+                       criterion='mse',
+                       max_depth=k) for k in complexity_param]
+   
+EPE, B, V = bias_variance_regression(models, X, y, T, yT, n_subsamples=30)
+    
+plt.figure(figsize=(10, 5))
+plt.plot(complexity_param, EPE, c='r', label='avg(EPE)')
+plt.plot(complexity_param, B,   c='b', label='avg(B**2)')
+plt.plot(complexity_param, V,   c='g', label='avg(V)')
 
-plt.figure(figsize=(10, 7))
-plt.errorbar(model_complexity_parameters, biases_conf_intervals['means'], 
-             xerr=0.5,
-             yerr=biases_conf_intervals['intervals'], linestyle='',
-             c='g', label='bias confidence intervals')
 plt.legend()
-plt.title('Model bias^2 depending on model complexity')
-plt.show()
-
-plt.figure(figsize=(10, 7))
-plt.errorbar(model_complexity_parameters, variances_conf_intervals['means'], 
-             xerr=0.5,
-             yerr=variances_conf_intervals['intervals'], linestyle='',
-             c='r', label='variance confidence intervals')
-plt.legend()
-plt.title('Model variance depending on model complexity')
 plt.show()
