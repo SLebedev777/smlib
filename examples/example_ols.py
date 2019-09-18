@@ -12,13 +12,15 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 from smlib.linear.ols import LinearRegression, bias_variance
 from smlib.linear.ridge import Ridge
+from smlib.linear.lasso import Lasso
 
 # Load the diabetes dataset
 diabetes = datasets.load_diabetes()
 
 
 # Use only one feature
-diabetes_X = diabetes.data[:, np.newaxis, 2]
+#diabetes_X = diabetes.data[:, np.newaxis, 2]
+diabetes_X = diabetes.data
 
 # Split the data into training/testing sets
 diabetes_X_train = diabetes_X[:-20]
@@ -31,6 +33,7 @@ diabetes_y_test = diabetes.target[-20:]
 # Create linear regression object
 #regr = LinearRegression(intercept=True)
 regr = Ridge(0.1)
+regr = Lasso()
 
 # Train the model using the training sets
 regr.fit(diabetes_X_train, diabetes_y_train)

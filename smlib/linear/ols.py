@@ -15,25 +15,29 @@ class LinearRegression:
     """
     Classic Ordinary Least Squares implementation
     """
-    def __init__(self, intercept=True):
-        self.intercept = intercept
+    def __init__(self, intercept=True, normalize=True):
         self.fitted = False
-        self.scaler = StandardScaler()
+        self.intercept = intercept
+        self.scaler = StandardScaler(with_std=True) if normalize else None
+        if not intercept:
+            self.scaler = None
         
     def fit(self, X, y):
-        X = self.scaler.fit_transform(X)
+        if self.scaler:
+            X = self.scaler.fit_transform(X)
         if self.intercept:
             X = self.add_intercept(X)
         X_t = X.T
         cov = np.matmul(X_t, X)
-        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y).T
+        self.coef_ = np.matmul(np.linalg.pinv(cov), X_t).dot(y).T
         self.residuals_ = y - np.dot(X, self.coef_)
         self.rss_ = np.dot(self.residuals_.T, self.residuals_)
         self.fitted = True
         return self.coef_
     
     def predict(self, X_pred):
-        X_pred = self.scaler.transform(X_pred)
+        if self.scaler:
+            X_pred = self.scaler.transform(X_pred)
         if self.intercept:
             X_pred = self.add_intercept(X_pred)
         return np.dot(X_pred, self.coef_)

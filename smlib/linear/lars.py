@@ -114,6 +114,11 @@ class LARS:
             self.alphas_.append(C)
             coef_path.append(w.tolist())
             step += 1
+        
+        C_ols = np.max(np.abs(np.dot(X.T, y - mu)))  # add last C (at OLS step)
+        self.alphas_.append(C_ols)
+        self.alphas_ = np.array(self.alphas_)
+        self.alphas_ = self.alphas_ / X.shape[0]
 
         self.coef_ = w
         self.coef_path_ = np.array(coef_path)
@@ -123,63 +128,65 @@ class LARS:
         y_pred = np.dot(X, self.coef_)
         y_pred = self.standardizer_y.inverse_transform(y_pred)
         return y_pred
-        
-'''
-X = np.array([[-1, 1], 
-              [0, 0], 
-              [1, 1]])
-y = np.array([-1.1111, 0, -1.1111])
-'''
-from sklearn.linear_model import Lars, LassoLars, lars_path
-from sklearn import datasets
-from smlib.linear.ols import LinearRegression
-
-#diabetes = datasets.load_diabetes()
-#X, y = diabetes.data, diabetes.target
-
-#boston = datasets.load_boston()
-#X, y = boston.data, boston.target
-
-X_std = StandardScaler().fit_transform(X)
-y_std = StandardScaler(with_std=False).fit_transform(y.reshape(-1, 1)).reshape((len(y)))
-alphas, _, sklars_coef_path_ = lars_path(X_std, y_std, method='lasso', verbose=3)
-
-xx = np.sum(np.abs(sklars_coef_path_.T), axis=1)
-xx /= xx[-1]
-
-plt.figure(figsize=(12, 8))
-plt.plot(xx, sklars_coef_path_.T)
-ymin, ymax = plt.ylim()
-plt.vlines(xx, ymin, ymax, linestyle='dashed')
-plt.xlabel('|coef| / max|coef|')
-plt.ylabel('Coefficients')
-plt.title('sklearn Path')
-plt.axis('tight')
-plt.show()
 
 
-ols = LinearRegression()
-ols.fit(X, y)
-#print(ols.coef_)
-
-lars = LARS(method='lasso')
-lars.fit(X, y)
-#print('check predict on Lars weights')
-#ny = 10
-#print(y[:ny])
-#print(ols.predict(X[:ny]))
-#print(lars.predict(X[:ny]))
-
-xx = np.sum(np.abs(lars.coef_path_), axis=1)
-xx /= xx[-1]
-
-plt.figure(figsize=(12, 8))
-plt.plot(xx, lars.coef_path_)
-ymin, ymax = plt.ylim()
-plt.vlines(xx, ymin, ymax, linestyle='dashed')
-plt.xlabel('|coef| / max|coef|')
-plt.ylabel('Coefficients')
-plt.title('smlib Path')
-plt.axis('tight')
-plt.show()
-
+if __name__ == '__main__':
+    '''
+    X = np.array([[-1, 1], 
+                  [0, 0], 
+                  [1, 1]])
+    y = np.array([-1.1111, 0, -1.1111])
+    '''
+    from sklearn.linear_model import Lars, LassoLars, lars_path
+    from sklearn import datasets
+    from smlib.linear.ols import LinearRegression
+    
+    diabetes = datasets.load_diabetes()
+    X, y = diabetes.data, diabetes.target
+    
+    #boston = datasets.load_boston()
+    #X, y = boston.data, boston.target
+    
+    X_std = StandardScaler().fit_transform(X)
+    y_std = StandardScaler(with_std=False).fit_transform(y.reshape(-1, 1)).reshape((len(y)))
+    alphas, _, sklars_coef_path_ = lars_path(X_std, y_std, method='lasso', verbose=3)
+    
+    xx = np.sum(np.abs(sklars_coef_path_.T), axis=1)
+    xx /= xx[-1]
+    
+    plt.figure(figsize=(12, 8))
+    plt.plot(xx, sklars_coef_path_.T)
+    ymin, ymax = plt.ylim()
+    plt.vlines(xx, ymin, ymax, linestyle='dashed')
+    plt.xlabel('|coef| / max|coef|')
+    plt.ylabel('Coefficients')
+    plt.title('sklearn Path')
+    plt.axis('tight')
+    plt.show()
+    
+    
+    ols = LinearRegression()
+    ols.fit(X, y)
+    #print(ols.coef_)
+    
+    lars = LARS(method='lasso')
+    lars.fit(X, y)
+    #print('check predict on Lars weights')
+    #ny = 10
+    #print(y[:ny])
+    #print(ols.predict(X[:ny]))
+    #print(lars.predict(X[:ny]))
+    
+    xx = np.sum(np.abs(lars.coef_path_), axis=1)
+    xx /= xx[-1]
+    
+    plt.figure(figsize=(12, 8))
+    plt.plot(xx, lars.coef_path_)
+    ymin, ymax = plt.ylim()
+    plt.vlines(xx, ymin, ymax, linestyle='dashed')
+    plt.xlabel('|coef| / max|coef|')
+    plt.ylabel('Coefficients')
+    plt.title('smlib Path')
+    plt.axis('tight')
+    plt.show()
+    

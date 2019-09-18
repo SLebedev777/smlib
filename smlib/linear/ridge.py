@@ -14,11 +14,12 @@ class Ridge(LinearRegression):
         super(Ridge, self).__init__(intercept=False)
         
     def fit(self, X, y):
-        X = self.scaler.fit_transform(X)
+        if self.scaler is not None:
+            X = self.scaler.fit_transform(X)
         X_t = X.T
         cov = np.matmul(X_t, X)
         cov += self.C * np.eye(len(cov))
-        self.coef_ = np.matmul(np.linalg.inv(cov), X_t).dot(y).T
+        self.coef_ = np.matmul(np.linalg.pinv(cov), X_t).dot(y).T
         self.w0_ = np.mean(y)
         self.residuals_ = y - np.dot(X, self.coef_) - self.w0_
         self.rss_ = np.dot(self.residuals_.T, self.residuals_)
@@ -26,5 +27,6 @@ class Ridge(LinearRegression):
         return self.coef_
 
     def predict(self, X_pred):
-        X_pred = self.scaler.transform(X_pred)
+        if self.scaler is not None:
+            X_pred = self.scaler.transform(X_pred)
         return np.dot(X_pred, self.coef_) + self.w0_
