@@ -41,6 +41,7 @@ class BinaryClassificationMetrics:
             elif yt == self.neg_label and yp == self.neg_label:
                 self.tn += 1
     
+    @property
     def confusion_matrix(self):
         """
         Return confusion matrix for binary classification.
@@ -55,32 +56,40 @@ class BinaryClassificationMetrics:
         return np.array([[self.tn, self.fp],
                          [self.fn, self.tp]])
         
-    
+    @property
     def precision(self):
         return self.tp / (self.tp + self.fp) if self.tp + self.fp > 0 else .0 
     
+    @property
     def recall(self):
         return self.tp / (self.tp + self.fn) if self.tp + self.fn > 0 else .0
     
-    def f_measure(self, beta=1.):
+    def fbeta_measure(self, beta=1.):
         """
         (Weighted) harmonic mean of precision and recall.
         """
-        P = self.precision()
-        R = self.recall()
+        P = self.precision
+        R = self.recall
         if P + R == 0.0:
             return 0.0
         return (1 + beta**2) * P * R / (P * beta**2 + R)
-        
+    
+    @property
+    def f1(self):
+        return self.fbeta_measure(beta=1.)
+    
+    @property
     def accuracy(self):
         return (self.tn + self.tp) / (self.tn + self.tp + self.fp + self.fn)
     
+    @property
     def sensitivity(self):
         """
         Sensitivity == Recall for positive class == True Positive Rate (TPR)
         """
-        return self.recall()
+        return self.recall
     
+    @property
     def specificity(self):
         """
         Specificity == Recall for negative class == True Negative Rate (TNR)
@@ -96,12 +105,13 @@ class BinaryClassificationMetrics:
         if normalize:
             zero_one_loss /= len(self.y_pred)
         return zero_one_loss
-        
+    
+    @property    
     def balanced_accuracy(self):
         """
         Average of per-class accuracies.
         """
-        return 0.5 * (self.sensitivity() + self.specificity())
+        return 0.5 * (self.sensitivity + self.specificity)
     
 """
 Stand-alone functions that calculate some binary classification metrics
