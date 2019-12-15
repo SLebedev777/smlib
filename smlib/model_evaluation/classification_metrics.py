@@ -113,12 +113,27 @@ class BinaryClassificationMetrics:
         """
         return 0.5 * (self.sensitivity + self.specificity)
     
+    @property
+    def mcc(self):
+        """
+        Matthew's Correlation Coefficient = sqrt(P1 * R1 * P0 * R0),
+        ie. multiplication of geometric means of precision and recall 
+        for every class.
+        """
+        tp = self.tp
+        tn = self.tn
+        fp = self.fp
+        fn = self.fn
+        return tp * tn / np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    
+
 """
 Stand-alone functions that calculate some binary classification metrics
 using real-value model outputs (= scores = decision_function values).
 """
 
 def roc_curve(y_true, y_score, pos_label=1):
+    assert len(y_true) == len(y_score)
     if np.unique(y_true).shape[0] == 1:
         raise ValueError('ROC is undefined if y_true contains only one class')
 
@@ -166,7 +181,67 @@ def roc_auc_score(y_true, y_score, pos_label=1):
                 auc += 0.5 * delta_fpr * delta_tpr
         i += 1
     return auc
-            
+          
+  
+def log_loss(y_true, y_proba, pos_label=1, normalize=True, eps=1e-15):
+    assert y_true.shape == y_proba.shape
+    #  log-loss is undefined for p=0 or p=1, so we must clip
+    y_proba_clip = np.clip(y_proba, eps, 1-eps)
+    logloss = -np.sum([y * np.log(p) + (1 - y) * np.log(1-p) \
+                       for y, p in zip(y_true, y_proba_clip)])
+    if normalize:
+        logloss /= len(y_true)
+    return logloss
+    
+
+def precision_recall_curve(y_true, y_score, pos_label=1):
+    assert len(y_true) == len(y_score)
+    
+    precisions = [1.]
+    recalls = [0.]
+    thresholds = []
+    sort_indices = np.argsort(-y_score)
+    y_sorted = y_true[sort_indices]
+    y_score_sorted = y_score[sort_indices]
+    i, j = 0, 0
+    M = len(y_score_sorted)
+    # start filling confusion matrix with threshold = max(y_score) + eps
+    # i.e we start from predicting no positive class, only negative for all objects.
+    tp = 0
+    fp = 0
+    tn = len(y_true[y_true != pos_label])
+    fn = M - tn
+    # getting threshold lower, incrementally changing confusion matrix
+    while i < M:
+        j = 0
+        cur_t = y_score_sorted[i]
+        while i + j < M and y_score_sorted[i + j] == cur_t:
+            j += 1
+        cur_y = y_sorted[i:i+j]
+        for y in cur_y:
+            if y == pos_label:
+                tp += 1
+                fn -= 1
+            else:
+                fp += 1
+                tn -= 1
+        cur_p = tp / (tp + fp)
+        cur_r = tp / (tp + fn)
+        precisions.append(cur_p)
+        recalls.append(cur_r)
+        thresholds.append(cur_t)
+        # if we reached recall == 1, we cannot further improve metrics for
+        # positive class, so no need to make threshold lower.
+        if cur_r == 1.:
+            break
+        i += j
+    # flip arrays to match scikit-learn implementation
+    return  np.array(precisions)[::-1], np.array(recalls)[::-1], thresholds[::-1]
+
+
+def pr_auc_score(y_true, y_score, pos_label=1):
+    p, r, _ = precision_recall_curve(y_true, y_score, pos_label)
+    return np.abs(np.trapz(p, r))
 
 
 if __name__ == '__main__':
@@ -176,5 +251,8 @@ if __name__ == '__main__':
     #y = np.array([1, 1, 1, 0, 1, 1, 0, 0])
     #scores = np.array([1., 1., 0.9, 0.6, 0.6, 0.4, 0.1, 0.05])
 
-    fpr, tpr, thresholds = roc_curve(y, scores, pos_label)
-    print(roc_auc_score(y, scores, pos_label))
+    #fpr, tpr, thresholds = roc_curve(y, scores, pos_label)
+    #print(roc_auc_score(y, scores, pos_label))
+
+    precision, recall, thresholds = precision_recall_curve(
+        y, scores, pos_label=2)

@@ -7,11 +7,14 @@ Created on Fri Aug  9 00:58:46 2019
 """
 from smlib.logistic_regression.logreg import LogisticRegression
 from smlib.model_evaluation.classification_metrics import (
-        BinaryClassificationMetrics, roc_auc_score)
+        BinaryClassificationMetrics, roc_auc_score, log_loss,
+        precision_recall_curve, pr_auc_score)
 
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn import metrics as skmetrics
+
+import matplotlib.pyplot as plt
 
 X, y = make_classification(n_samples=20000,
                            n_features=20,
@@ -56,3 +59,20 @@ print('\nROC AUC')
 print(skmetrics.roc_auc_score(y_test, y_pred_probas))
 print(roc_auc_score(y_test, y_pred_probas))
 
+print('\nLog loss (mean negative log-likelihood across the test set)')
+print(skmetrics.log_loss(y_test, y_pred_probas))
+print(log_loss(y_test, y_pred_probas))
+
+skprecision, skrecall, skthresholds = skmetrics.precision_recall_curve(y_test, y_pred_probas)
+plt.figure(figsize=(8, 8))
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.ylim([0.0, 1.05])
+plt.xlim([0.0, 1.0])
+plt.scatter(skrecall, skprecision, color='r')
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred_probas)
+plt.plot(recall, precision, color='g')
+
+print('\nPrecision-Recall AUC')
+print(skmetrics.auc(skrecall, skprecision))
+print(pr_auc_score(y_test, y_pred_probas))
