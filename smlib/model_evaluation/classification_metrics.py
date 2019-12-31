@@ -10,19 +10,17 @@ class BinaryClassificationMetrics:
     """
     Calculates popular binary classification metrics using BINARY predictions.
     """
-    def __init__(self, y_true, y_pred, 
-                 pos_label=1, neg_label=0):
+    def __init__(self, y_true, y_pred, pos_label=1):
         assert isinstance(y_true, np.ndarray)
         assert isinstance(y_pred, np.ndarray)
         assert y_true.shape == y_pred.shape
         assert len(y_true.shape) == 1
         assert y_true.shape[0] > 1
-        assert all(y in (neg_label, pos_label) for y in np.unique(y_true))
+        assert pos_label in y_true
                 
         self.y_true = y_true
         self.y_pred = y_pred
         self.pos_label = pos_label
-        self.neg_label = neg_label
         
         self._calculate_confusion_matrix_cells()
         
@@ -34,11 +32,11 @@ class BinaryClassificationMetrics:
         for yt, yp in zip(self.y_true, self.y_pred):
             if yt == self.pos_label and yp == self.pos_label:
                 self.tp += 1
-            elif yt == self.pos_label and yp == self.neg_label:
+            elif yt == self.pos_label and yp != self.pos_label:
                 self.fn += 1
-            elif yt == self.neg_label and yp == self.pos_label:
+            elif yt != self.pos_label and yp == self.pos_label:
                 self.fp += 1
-            elif yt == self.neg_label and yp == self.neg_label:
+            elif yt != self.pos_label and yp != self.pos_label:
                 self.tn += 1
     
     @property
@@ -129,7 +127,7 @@ class BinaryClassificationMetrics:
 
 """
 Stand-alone functions that calculate some binary classification metrics
-using real-value model outputs (= scores = decision_function values).
+using real-value model outputs (scores or probas or decision_function values).
 """
 
 def roc_curve(y_true, y_score, pos_label=1):
@@ -200,6 +198,7 @@ def precision_recall_curve(y_true, y_score, pos_label=1):
     precisions = [1.]
     recalls = [0.]
     thresholds = []
+    f1 = [0.]
     sort_indices = np.argsort(-y_score)
     y_sorted = y_true[sort_indices]
     y_score_sorted = y_score[sort_indices]
@@ -230,13 +229,16 @@ def precision_recall_curve(y_true, y_score, pos_label=1):
         precisions.append(cur_p)
         recalls.append(cur_r)
         thresholds.append(cur_t)
+        f1.append(2*cur_p*cur_r/(cur_p+cur_r) if (cur_p+cur_r)>0 else 0.0)
         # if we reached recall == 1, we cannot further improve metrics for
         # positive class, so no need to make threshold lower.
         if cur_r == 1.:
             break
         i += j
     # flip arrays to match scikit-learn implementation
-    return  np.array(precisions)[::-1], np.array(recalls)[::-1], thresholds[::-1]
+    return  (np.array(precisions)[::-1], np.array(recalls)[::-1], 
+             thresholds[::-1], np.array(f1)[::-1])
+
 
 
 def pr_auc_score(y_true, y_score, pos_label=1):
@@ -254,5 +256,5 @@ if __name__ == '__main__':
     #fpr, tpr, thresholds = roc_curve(y, scores, pos_label)
     #print(roc_auc_score(y, scores, pos_label))
 
-    precision, recall, thresholds = precision_recall_curve(
+    precision, recall, thresholds, _ = precision_recall_curve(
         y, scores, pos_label=2)
