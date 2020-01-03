@@ -240,11 +240,63 @@ def precision_recall_curve(y_true, y_score, pos_label=1):
              thresholds[::-1], np.array(f1)[::-1])
 
 
-
 def pr_auc_score(y_true, y_score, pos_label=1):
     p, r, _ = precision_recall_curve(y_true, y_score, pos_label)
     return np.abs(np.trapz(p, r))
 
+
+class MulticlassMetrics:
+    def __init__(self, y_true, y_pred):
+        assert isinstance(y_true, np.ndarray)
+        assert isinstance(y_pred, np.ndarray)
+        assert len(y_pred.shape) == 1, "By now, one hot multiclass labels format is not supported."
+        assert y_true.shape == y_pred.shape
+        assert len(np.unique(y_true)) > 1
+        
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.metrics = dict()
+        self.sup = dict()
+        self.class_weights = dict()
+        self.total = len(y_true)
+
+        for c in np.unique(y_true):
+            self.metrics[c] = BinaryClassificationMetrics(y_true, y_pred, pos_label=c)
+            self.sup[c] = len(y_true[y_true==c])
+            self.class_weights[c]  = self.sup[c] / self.total
+            
+    def classification_report(self):
+        s = 'Label\t\tP\tR\tF1\tSupport\n'
+        P = []
+        R = []
+        F1 = []
+        P_w = []
+        R_w = []
+        F1_w = []
+        for c in self.metrics:
+            m = self.metrics[c]
+            p = m.precision
+            r = m.recall
+            f1 = m.f1
+            sup = self.sup[c]
+            P.append(p)
+            R.append(r)
+            F1.append(f1)
+            P_w.append(self.class_weights[c] * p)
+            R_w.append(self.class_weights[c] * r)
+            F1_w.append(self.class_weights[c] * f1)
+            s += f'{c:d}\t\t{p:.2f}\t{r:.2f}\t{f1:.2f}\t{sup}\n'
+        p_macro = np.mean(P)
+        r_macro = np.mean(R)
+        f1_macro = np.mean(F1)
+        p_w = np.sum(P_w)
+        r_w = np.sum(R_w)
+        f1_w = np.sum(F1_w)
+        s += f'\navg macro\t{p_macro:.2f}\t{r_macro:.2f}\t{f1_macro:.2f}\t{self.total}'
+        s += f'\navg weighted\t{p_w:.2f}\t{r_w:.2f}\t{f1_w:.2f}\t{self.total}\n'
+        return s
+            
+            
 
 if __name__ == '__main__':
     y = np.array([1, 1, 2, 2])

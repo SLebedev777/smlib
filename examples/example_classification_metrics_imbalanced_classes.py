@@ -12,7 +12,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from smlib.model_evaluation.classification_metrics import (
-        BinaryClassificationMetrics, roc_curve, precision_recall_curve)
+        BinaryClassificationMetrics, roc_curve, precision_recall_curve,
+        MulticlassMetrics)
+from sklearn.metrics import classification_report
 import pandas as pd
 
 def plot_hyperplane(clf, ax, min_x, max_x, linestyle, label):
@@ -44,15 +46,19 @@ def classification_case(X, y, clf, xlim, ylim, title):
         plot_hyperplane(est, ax, xlim[0], xlim[1], 'k--', '')
     
     last_label = 2
-    y_test_pred = clf.estimators_[2].predict(X_test)*last_label  # emulate 0-2 binary answer
+    y_test_binary_pred = clf.estimators_[2].predict(X_test)*last_label  # emulate 0-2 binary answer
     y_test_probas = clf.estimators_[2].predict_proba(X_test)[:, 1]
-    m = BinaryClassificationMetrics(y_test, y_test_pred, pos_label=last_label)
+    m = BinaryClassificationMetrics(y_test, y_test_binary_pred, pos_label=last_label)
+
+    y_test_pred = clf.predict(X_test)
+    mcm = MulticlassMetrics(y_test, y_test_pred)
  
     print('='*50 + '\n')
     print(title)
     print(f'Estimator: {clf}')
     print('='*50)
     print(pd.Series(y_test).value_counts())
+    print(mcm.classification_report())
     print('\nMetrics of binary classification class2 (yellow) vs rest:')    
     print('\nconfusion_matrix:')
     print(m.confusion_matrix)
@@ -103,7 +109,7 @@ min_y = np.min(X[:, 1])
 max_y = np.max(X[:, 1])
 
 models = [LogisticRegression(solver='newton-cg'),
-          SVC(kernel='linear', probability=True)
+          #SVC(kernel='linear', probability=True)
         ]
 
 for model in models:
