@@ -241,7 +241,7 @@ def precision_recall_curve(y_true, y_score, pos_label=1):
 
 
 def pr_auc_score(y_true, y_score, pos_label=1):
-    p, r, _ = precision_recall_curve(y_true, y_score, pos_label)
+    p, r, _, _ = precision_recall_curve(y_true, y_score, pos_label)
     return np.abs(np.trapz(p, r))
 
 

@@ -70,7 +70,7 @@ plt.ylabel('Precision')
 plt.ylim([0.0, 1.05])
 plt.xlim([0.0, 1.0])
 plt.scatter(skrecall, skprecision, color='r')
-precision, recall, thresholds = precision_recall_curve(y_test, y_pred_probas)
+precision, recall, thresholds, _ = precision_recall_curve(y_test, y_pred_probas)
 plt.plot(recall, precision, color='g')
 
 print('\nPrecision-Recall AUC')
