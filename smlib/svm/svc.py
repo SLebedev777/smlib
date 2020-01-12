@@ -21,7 +21,7 @@ class SupportVectorClassifier:
     def __init__(self, C=1., kernel='linear', n_iters=100, tol=1e-3,
                  solver='scipy'):
         self.C = C  # regularization coefficient
-        assert kernel in ['linear']
+        assert kernel in ['linear', 'rbf']
         self.kernel = kernel
         self.n_iters = n_iters
         self.tol = tol
@@ -38,10 +38,20 @@ class SupportVectorClassifier:
     def _kernel_gram_matrix(self, X, y):
         M, N = X.shape
         if self.kernel == 'linear':
-            tmp = np.multiply(X, y.reshape(M, 1))
-            return np.dot(tmp, tmp.T)
+            self.kernel_func = lambda x1, x2: np.dot(x1, x2.T)
+            #tmp = np.multiply(X, y.reshape(M, 1))
+            #return np.dot(tmp, tmp.T)
+        elif self.kernel == 'rbf':
+            self.kernel_func = lambda x1, x2: np.exp(-np.dot(x1-x2, x1-x2)/N)
         else:
             raise ValueError('unknown kernel')
+
+        Gram = np.zeros((M, M))
+        for i in range(M):
+            for j in range(M):
+                Gram[i, j] = self.kernel_func(X[i], X[j]) * y[i] * y[j]
+        return Gram            
+
     
     def _fit_scipy_dual(self, X, y, Gram):
         M, N = X.shape
@@ -81,20 +91,32 @@ class SupportVectorClassifier:
                      callback=callback,
                      options={'maxiter': self.n_iters,
                               'disp': True})
+        # found dual coefficients
         lambd = opt_res.x
         lambd[lambd <= 1e-5] = .0
         
         sv = lambd > 0
         num_sv = len(lambd[sv])
-        w = np.sum(np.multiply((y[sv]*lambd[sv]).reshape(num_sv, 1), X[sv, :]), axis=0)
         
+        self.coef_ = None
+        # for linear kernel, calculate weights from primal problem using 
+        # dual coefficients from support vectors
+        if self.kernel == 'linear':
+            self.coef_ = np.sum(np.multiply((y[sv]*lambd[sv]).reshape(num_sv, 1), 
+                                            X[sv, :]), axis=0)
+            w = self.coef_
+        
+        # calculate intercept in points that lay exactly on margin boundaries 
         exact_sv = (0 < lambd) & (lambd < C)
+        num_exact_sv = len(lambd[exact_sv])
         w0 = np.mean(np.dot(X[exact_sv, :], w) - y[exact_sv])
+        g = Gram[np.where(sv)[0], :][:, np.where(exact_sv)[0]]
+        tmp = np.dot(np.multiply(g, y[sv].reshape(num_sv,1)), lambd[sv])
+        w0_ = np.mean(tmp - y[exact_sv])
         
         self.support_ = np.where(sv)[0].tolist()
-        self.coef_ = w
-        self.dual_coef_ = lambd[sv]
-        self.intercept_ = w0
+        self.dual_coef_ = lambd[sv] * y[sv]
+        self.intercept_ = w0_
         self.was_fit = True
         return self
 
@@ -109,11 +131,12 @@ if __name__ == '__main__':
     from sklearn.datasets import make_blobs
     from sklearn.svm import LinearSVC, SVC
 
-    X, y = make_blobs(n_samples=800, centers=2, random_state=50)
+    X, y = make_blobs(n_samples=80, centers=2, random_state=115)
     y[y == 0] = -1
     
-    #clf = SupportVectorClassifier(C=0.001)
-    clf = SVC(kernel='linear', C=0.001)
+    C = 1000
+    clf = SupportVectorClassifier(C=C)
+    #clf = SVC(kernel='linear', C=C)
     clf.fit(X, y)
     print(clf.support_)
     print(clf.dual_coef_)
