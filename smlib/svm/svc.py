@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import minimize, Bounds
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from smlib.utils.one_hot import OneHotEncoder
 
@@ -20,14 +21,14 @@ class SupportVectorClassifier:
     Dual form is solved using scipy.optimize.
     Kernels are supported.
     """
-    def __init__(self, C=1., kernel='linear', n_iters=100, tol=1e-3,
+    def __init__(self, C=1., kernel='linear', n_iters=500, tol=1e-3,
                  solver='scipy', verbose=True):
         self.C = C  # regularization coefficient
         assert kernel in ['linear', 'rbf']
         self.kernel = kernel
         self.n_iters = n_iters
         self.tol = tol
-        assert solver in ['scipy']
+        assert solver in ['scipy', 'smo']
         self.solver = solver
         self.verbose = verbose
         self.was_fit = False
@@ -36,6 +37,8 @@ class SupportVectorClassifier:
         assert np.unique(y).tolist() == [-1, 1]
         
         Gram = self._kernel_gram_matrix(X, y)
+        if self.solver == 'smo':
+            return self._fit_smo(X, y, Gram)
         return self._fit_scipy_dual(X, y, Gram)
         
     def _kernel_gram_matrix(self, X, y):
@@ -47,8 +50,9 @@ class SupportVectorClassifier:
         else:
             raise ValueError('unknown kernel')
 
+        print('calculating Gram matrix...')
         Gram = np.zeros((M, M))
-        for i in range(M):
+        for i in tqdm(range(M)):
             for j in range(M):
                 Gram[i, j] = self.kernel_func(X[i], X[j]) * y[i] * y[j]
         return Gram            
@@ -135,16 +139,87 @@ class SupportVectorClassifier:
     def predict(self, X):
         return np.sign(self.decision_function(X))
 
+    def _fit_smo(self, X, y, Gram):
+        M, N = X.shape
+        C = self.C
+        alphas = np.zeros(M)
+        e = np.ones((M))
+        b = 0
+        
+        def svm_output(point_index, support_indices):
+            if len(support_indices) == 0:
+                z = 0.
+            else:
+                z = np.sum([alphas[i]*y[i]*Gram[i, point_index] for i in support_indices])
+            return z - b
+            
+        n_changed = 1
+        while(n_changed):
+            n_changed = 0        
+            for i2 in range(M):
+                #print(loss)
+                i1 = i2
+                while i1 == i2:
+                    i1 = np.random.randint(0, M)
+                y1 = y[i1]
+                y2 = y[i2]
+                s = y1 * y2
+                support_indices = np.nonzero(alphas)[0]
+                E1 = svm_output(i1, support_indices) - y1
+                E2 = svm_output(i2, support_indices) - y2
+                r2 = E2*y2
+                a1 = alphas[i1]
+                a2 = alphas[i2]
+                if (r2 < -self.tol and a2 < C) or (r2 > self.tol and a2 > 0):
+                    if y1 == y2:
+                        L = np.max([0., a1 + a2 - C])
+                        H = np.min([C, a1 + a2])
+                    else:
+                        L = np.max([0., a2 - a1])
+                        H = np.min([C, a2 - a1 + C])
+                    if L == H:
+                        continue
+                    k11 = Gram[i1, i1]
+                    k22 = Gram[i2, i2]
+                    k12 = s * Gram[i1, i2]
+                    eta = k11 + k22 - 2*k12
+                    if eta <= 0:
+                        continue
+                    a2_new = a2 + y2 * (E1 - E2) / eta
+                    a2_new = H if a2_new > H else a2_new
+                    a2_new = L if a2_new < L else a2_new
+                    a1_new = a1 + s*(a2 - a2_new)
+                    alphas[i1] = a1_new
+                    alphas[i2] = a2_new
+                    b1 = E1 + y1*(a1_new - a1)*k11 + y2*(a2_new - a2)*k12 + b
+                    b2 = E2 + y1*(a1_new - a1)*k12 + y2*(a2_new - a2)*k22 + b
+                    if 0 < a1_new < C:
+                        b = b1
+                    elif 0 < a2_new < C:
+                        b = b2
+                    else:
+                        b = 0.5 * (b1 + b2)
+                    n_changed += 1
+            loss = -e.T.dot(alphas) + 0.5 * alphas.T.dot(Gram.dot(alphas))
+            print(n_changed, loss)
+        
+        sv = alphas > 0
+        self.support_ = np.where(sv)[0].tolist()
+        self.support_vectors_ = X[self.support_, :]
+        self.dual_coef_ = alphas[sv] * y[sv]
+        self.intercept_ = b
+        self.was_fit = True
+
 
 if __name__ == '__main__':
     from sklearn.datasets import make_blobs
     from sklearn.svm import LinearSVC, SVC
 
-    X, y = make_blobs(n_samples=40, centers=2, random_state=3)
+    X, y = make_blobs(n_samples=1000, centers=2, random_state=3)
     y[y == 0] = -1
     
-    C = 1
-    clf = SupportVectorClassifier(C=C, kernel='rbf', verbose=False)
+    C = 1.
+    clf = SupportVectorClassifier(C=C, kernel='linear', solver='smo', verbose=False)
     #clf = SVC(kernel='rbf', C=C)
     clf.fit(X, y)
     print(clf.support_)
