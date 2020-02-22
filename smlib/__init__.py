@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 
+from . import boosting
 from . import clustering
 from . import core
 from . import decision_trees
