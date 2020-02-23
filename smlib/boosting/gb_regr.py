@@ -42,20 +42,3 @@ class GBRegressor:
         for i in range(self.n_estimators):
             y_pred += self.weights[i] * self.algs[i].predict(X)
         return y_pred
-
-
-import matplotlib.pyplot as plt
-
-X = np.linspace(-10, 10)
-y = np.sin(X) + 3
-X = X[:, np.newaxis]
-
-plt.figure(figsize=(10, 7))
-plt.scatter(X, y)
-
-for n in [2, 5, 10, 50, 500]:
-    gbr = GBRegressor(n, max_depth=3)
-    gbr.fit(X, y)
-    y_pred = gbr.predict(X)
-    plt.plot(X, y_pred, label=n)
-    plt.legend()

@@ -32,7 +32,7 @@ print("Classification report for classifier %s:\n%s\n"
 print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
 
 # now fit our own decision tree and compare quality with sklearn
-dt = DecisionTree(criterion='gini', max_depth=3, min_samples_leaf=5)
+dt = DecisionTree(criterion='gini', max_depth=7, min_samples_leaf=5)
 dfX = pd.DataFrame(data)
 dfy = pd.Series(digits.target)
 
