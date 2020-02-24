@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from smlib.decision_trees.dt import DecisionTree
 
 from sklearn.datasets import load_iris
-
+from sklearn.tree import DecisionTreeClassifier
 # Parameters
 n_classes = 3
 plot_colors = "ryb"
@@ -27,9 +27,18 @@ for pairidx, pair in enumerate([[0, 1], [0, 2], [0, 3],
     # We only take the two corresponding features
     X = iris.data[:, pair]
     y = iris.target
+
+    print('-'*50)
+    print('feature importances for: ')
+    print(iris.feature_names[pair[0]], iris.feature_names[pair[1]])
        
     dt = DecisionTree(criterion='gini', max_depth=5, min_samples_leaf=2)
     dt.fit(X, y)
+    print(dt.feature_importances_)
+    
+    skdt = DecisionTreeClassifier(criterion='gini', max_depth=5, min_samples_leaf=2)
+    skdt.fit(X, y)
+    print(skdt.feature_importances_)
     
     plt.subplot(2, 3, pairidx + 1)
     plt.xlabel(iris.feature_names[pair[0]])

@@ -84,9 +84,17 @@ class DecisionTree:
         # y is numpy array of shape (n_samples)
         # then they are transformed to pandas objects and passed to _build()
         assert len(X) == len(y)
+        M, N = X.shape
         dfX = pd.DataFrame(X)
         dfy = pd.Series(y)
+        self.feature_importances_ = np.zeros(N)
+        
         self._build(dfX, dfy, current_node=None)
+        
+        self.feature_importances_ /= len(y)
+        sum_imp = np.sum(self.feature_importances_)
+        if sum_imp > 0.0:
+            self.feature_importances_ /= sum_imp
     
     def _predict_one(self, x):
         # x is pd.Series with 1 row or numpy 1d array with shape (n_features,)
@@ -178,6 +186,10 @@ class DecisionTree:
             features = x.columns
             key, left_x, left_y, right_x, right_y = self.find_best_current_split(x, y, features)
             node = self.create_node(key, None, current_node)
+            # update feature importance
+            best_feature, best_threshold, best_ig = key
+            self.feature_importances_[best_feature] += best_ig*len(y)
+
             self._build(left_x, left_y, node)
             self._build(right_x, right_y, node)
         return node

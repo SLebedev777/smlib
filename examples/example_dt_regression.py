@@ -15,15 +15,14 @@ rng = np.random.RandomState(1)
 X = np.sort(5 * rng.rand(80, 1), axis=0)
 y = np.sin(X).ravel()
 y[::5] += 3 * (0.5 - rng.rand(16))
-dfX = pd.DataFrame(X, columns=['X'])
-dfy = pd.Series(y)
 
 
 # Fit regression model
-regr_1 = DecisionTree(task='regression', criterion='mse', max_depth=2)
-regr_2 = DecisionTree(task='regression', criterion='mse', max_depth=15, min_samples_leaf=1)
-regr_1.fit(dfX, dfy)
-regr_2.fit(dfX, dfy)
+regr_1 = DecisionTree(task='regression', criterion='mse', max_depth=1)
+regr_2 = DecisionTree(task='regression', criterion='mse', max_depth=15, min_samples_leaf=1,
+                      verbose=True)
+regr_1.fit(X, y)
+regr_2.fit(X, y)
 
 # Predict
 X_test = np.arange(0.0, 5.0, 0.01)[:, np.newaxis]
