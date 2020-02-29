@@ -130,6 +130,8 @@ class DecisionTree:
             for threshold in thresholds:                
                 mask = x[feature] <= threshold
                 left_y, right_y = y[mask], y[~mask]
+                if min([len(left_y), len(right_y)]) < self.min_samples_leaf:
+                    continue
                 y_metric = self.metric_func(y)
                 left_metric = self.metric_func(left_y)
                 right_metric = self.metric_func(right_y)
@@ -137,6 +139,9 @@ class DecisionTree:
                 logger.debug('feature: %s  threshold: %.2f  y_metric = %.3f  left_y_metric = %.3f  right_y_metric = %.3f  ig = %.3f' %
                               (feature, threshold, y_metric, left_metric, right_metric, ig))
                 calcs.append([feature, threshold, ig])
+        if not calcs:
+            # could not do split - return to make a leaf here
+            return [0, 0, 0], x, y, x, y
         key = sorted(calcs, key=lambda x: x[2], reverse=True)[0]
         best_feature = key[0]
         best_threshold = key[1]
@@ -174,7 +179,8 @@ class DecisionTree:
         logger.debug('current_node: %s' % current_node)
         y_metric = self.metric_func(y)
         curr_depth = current_node.depth if current_node is not None else 0
-        if curr_depth >= self.max_depth or len(y) <= max(1, self.min_samples_leaf) or y_metric < 0.001:
+        if curr_depth >= self.max_depth or \
+        (current_node is not None and current_node.key == [0, 0, 0]) or y_metric < 1e-7:
             # make leaf with class label
             label = self.label_func(y)
             node = self.create_node('leaf', label, current_node)

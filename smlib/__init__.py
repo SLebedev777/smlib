@@ -1,10 +1,11 @@
 import numpy as np
 import logging
 
+from . import decision_trees
+from . import bagging
 from . import boosting
 from . import clustering
 from . import core
-from . import decision_trees
 from . import knn
 from . import linear
 from . import model_evaluation
