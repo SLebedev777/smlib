@@ -18,7 +18,7 @@ class SupportVectorClassifier:
     """
     SVC for binary classification.
     
-    Dual form is solved using scipy.optimize.
+    Dual form is solved using scipy.optimize or SMO implementation.
     Kernels are supported.
     """
     def __init__(self, C=1., kernel='linear', n_iters=500, tol=1e-3,

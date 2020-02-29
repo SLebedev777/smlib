@@ -27,7 +27,7 @@ def golden1dmin(f, a, b, eps):
 
 class GBClassifier:
     """
-    Gradient Boosting Classification using Decision Trees and Log loss.
+    Gradient Boosting Classification using Decision Trees.
     """
     def __init__(self, n_estimators=50, max_depth=1, loss='log', 
                  learning_rate=1.):
