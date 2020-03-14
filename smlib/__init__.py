@@ -10,7 +10,7 @@ from . import knn
 from . import linear
 from . import model_evaluation
 from . import dim_reduction
-from . import naive_bayes
+from . import bayes
 from . import logistic_regression
 from . import utils
 

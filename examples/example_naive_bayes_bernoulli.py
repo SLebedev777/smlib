@@ -9,7 +9,7 @@ import numpy as np
 from sklearn import datasets
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import BernoulliNB as skBNB
-from smlib.naive_bayes.nb import BernoulliNB
+from smlib.bayes.nb import BernoulliNB
 
 X_train = np.array([
         [1, 1, 0],

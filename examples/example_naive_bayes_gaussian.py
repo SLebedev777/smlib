@@ -9,7 +9,7 @@ Created on Sun Jul 21 21:10:53 2019
 from sklearn import datasets
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import GaussianNB as skGNB
-from smlib.naive_bayes.nb import GaussianNB
+from smlib.bayes.nb import GaussianNB
 
 digits = datasets.load_digits()
 
