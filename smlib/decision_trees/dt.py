@@ -122,6 +122,7 @@ class DecisionTree:
     def find_best_current_split(self, x, y, features):
         N = len(y)
         calcs = []
+        y_metric = self.metric_func(y)
         for feature in features:
             feature_values = sorted(x[feature].unique().tolist())
             thresholds = feature_values[:-1]
@@ -132,7 +133,6 @@ class DecisionTree:
                 left_y, right_y = y[mask], y[~mask]
                 if min([len(left_y), len(right_y)]) < self.min_samples_leaf:
                     continue
-                y_metric = self.metric_func(y)
                 left_metric = self.metric_func(left_y)
                 right_metric = self.metric_func(right_y)
                 ig = y_metric - (len(left_y)*left_metric + len(right_y)*right_metric) / N
