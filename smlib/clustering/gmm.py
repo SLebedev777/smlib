@@ -73,7 +73,9 @@ class GaussianMixtureEM:
                 best_model = [resp, mu, cov, w]
                 best_llh = llh
 
-        self.resp_, self.mu_, self.cov_, self.w_ = best_model        
+        self.resp_, self.mu_, self.cov_, self.w_ = best_model
+        self.cov_inv_ = [np.linalg.inv(c) for c in self.cov_]
+        self.cov_det_ = [np.linalg.det(c) for c in self.cov_]
         self.cluster_labels_ = np.argmax(self.resp_, axis=0)        
         self.was_fit = True
 
@@ -85,6 +87,23 @@ class GaussianMixtureEM:
         print('Not implemented')
         return None
 
+    def predict_proba(self, X):
+        if not self.was_fit:
+            raise ValueError("trying to predict before fit")
+
+        M, N = X.shape
+        K = self.n_components
+
+        p = []
+        for k in range(K):
+            p.append(self.w_[k] * gaussian_pdf(X, 
+                                               self.mu_[k], 
+                                               self.cov_inv_[k], 
+                                               self.cov_det_[k], N))
+        p = np.array(p)  # shape = (K, M)
+        gm_probas = np.sum(p, axis=0)  # p(x). shape = (M,)
+        return gm_probas
+        
 
 def gaussian_pdf(X, mu, cov_inv, cov_det, n):
     X_mu = X - mu
