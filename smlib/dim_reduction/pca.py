@@ -11,6 +11,7 @@ from smlib.core.linalg import svd
 class PCA:
     def __init__(self, n_components=None):
         self.n_components = n_components
+        self._was_fit = False
     
     def fit(self, X):
         assert len(X.shape) == 2
@@ -26,14 +27,18 @@ class PCA:
         self.explained_variance_ratio = self.explained_variance / total_variance
         self.explained_variance = self.explained_variance[:k]
         self.explained_variance_ratio = self.explained_variance_ratio[:k]
+        self._was_fit = True
+        return self
     
     def transform(self, X):
+        assert self._was_fit
         assert len(X.shape) == 2
         X_mean = X.mean(axis=0)
         X = X - X_mean
         X_trans = np.dot(X, self.components.T)
         return X_trans
         
-    
+    def fit_transform(self, X):
+        return self.fit(X).transform(X)
         
             
